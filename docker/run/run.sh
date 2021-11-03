@@ -1,0 +1,1 @@
+sudo docker run --rm -d -it --name bony-test --network=bridge -p 8080:20022 --hostname 4J bonychops/discord-terminal-run

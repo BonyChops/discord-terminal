@@ -1,0 +1,1 @@
+sudo docker run --rm -d -it --name bony-test2 --hostname 4J --network=host bonychops/discord-terminal-host
