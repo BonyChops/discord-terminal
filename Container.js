@@ -8,17 +8,20 @@ const exec = util.promisify(childProcess.exec);
 const config = require("./config.json");
 
 class Container {
-    constructor(name) {
-        this.name = name;
+    constructor(option) {
+        this.name = option.name;
+        this.port = option.port;
+        this.containerName = option.image + "-container"
+        this.image = option.image;
     }
 
     getContainers = async () => {
-        return await docker.listContainers({ all: false });
+        return await docker.listContainers({ all: true });
     }
 
     startContainer = async () => {
         console.log("checking")
-        const containerInfo = (await this.getContainers()).find(containerInfo => containerInfo.Names.includes("/" + this.name));
+        const containerInfo = (await this.getContainers()).find(containerInfo => containerInfo.Names.includes("/" + this.containerName));
         if (containerInfo?.State === "running") {
             return;
         }
@@ -27,15 +30,15 @@ class Container {
         if (containerInfo === undefined) {
             console.log(this.name);
             container = await docker.createContainer({
-                name: this.name,
-                Image: this.name,
+                name: this.containerName,
+                Image: this.image,
                 Hostname: config.hostname,
                 HostConfig: {
                     NetworkMode: "bridge",
                     PortBindings: {
                         "22/tcp": [
                             {
-                                HostPort: "8080"
+                                HostPort: String(this.port)
                             }
                         ]
                     }
@@ -59,7 +62,7 @@ class Container {
 
     resetContainer = async () => {
         await exec('ssh-keygen -f "/home/bonychops/.ssh/known_hosts" -R "[localhost]:8080"');
-        let containerInfo = (await this.getContainers()).find(containerInfo => containerInfo.Names.includes("/" + this.name));
+        let containerInfo = (await this.getContainers()).find(containerInfo => containerInfo.Names.includes("/" + this.containerName));
         console.log("loading")
         if (containerInfo !== undefined) {
             const container = docker.getContainer(containerInfo.Id);

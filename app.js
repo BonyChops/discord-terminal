@@ -59,7 +59,7 @@ const validUserName = async (nameBuf) => {
     return name;
 }
 
-const runnerContainer = new Runner();
+const runnerContainers = config.containers.map(container => new Runner(container));
 
 
 client.on('ready', async () => {
@@ -93,8 +93,24 @@ ${cowsay.say({ text: `${config.terminalName}へようこそ！` })}
 ${fs.readFileSync("./eula.txt")}
 `
 
+const getContainer = (username) => {
+    let result;
+    try {
+        const userIndex = db.getIndex("/containerCache", username, "username");
+        if (userIndex === -1) {
+            throw new Error("No data found");
+        }
+        result = db.getData(`/containerCache[${userIndex}]/containerName`);
+    } catch (e) {
+        return runnerContainers[0];
+    }
+    const runnerContainer = runnerContainers.find(runner => runner.container.name === result);
+    return runnerContainer === undefined ? runnerContainers[0] : runnerContainer;
+}
+
 const runCommand = async (msg, username, command, args = [], disablePrompt = false) => {
     let result;
+    const runnerContainer = getContainer(username);
     try {
         await msg.channel.sendTyping();
         result = await runnerContainer.sendCommand(username, command, args);
@@ -169,6 +185,7 @@ client.on('messageCreate', async (msg) => {
             const channel = config.terminalChannel.find(channel => channel.id === String(msg.channel.id));
             username = await validUserName(channel.user);
         }
+        const runnerContainer = getContainer(username);
         if (!runnerContainer.eulaChecked(msg.author.id)) {
             const row = new MessageActionRow()
                 .addComponents(
@@ -310,6 +327,8 @@ client.on('interactionCreate', async (interaction) => {
         );
     if (!interaction.isButton()) return;
     console.log(interaction);
+    const username = await validUserName(interaction.channel.type === "DM" ? interaction.user.username : channel.user);
+    const runnerContainer = getContainer(username);
     if (interaction.customId === 'eulaAccept') {
         await interaction.update({ content: eula, components: [disabledAcceptRow] });
         const channel = config.terminalChannel.find(channel => channel.id === String(interaction.channel.id));
@@ -329,7 +348,6 @@ client.on('interactionCreate', async (interaction) => {
         db.delete("/currentDirectories");
     }
     const channel = config.terminalChannel.find(channel => channel.id === String(interaction.channel.id));
-    const username = await validUserName(interaction.channel.type === "DM" ? interaction.user.username : channel.user);
     runnerContainer.showPrompt(username, interaction.channel)
 });
 

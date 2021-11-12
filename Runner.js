@@ -33,8 +33,8 @@ const scpRead = (client, src) => (new Promise((resolve, reject) => {
 }))
 
 class Runner {
-    constructor() {
-        this.container = new Container(RUN);
+    constructor(option) {
+        this.container = new Container(option);
     }
 
     eulaChecked = (username) => {
