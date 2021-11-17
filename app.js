@@ -332,7 +332,7 @@ client.on('messageCreate', async (msg) => {
             console.log(workflow);
             const username = "workflow";
             const runnerContainer = getContainer(username);
-            //await runnerContainer.sendCommand(username, "rm -rf /home/workflow/files\nmkdir -p /home/workflow/files");
+            await runnerContainer.sendCommand(username, "rm -rf /home/workflow/files\nmkdir -p /home/workflow/files");
             let filesPath = [];
             if (msg.attachments.size > 0) {
                 filesPath = await Promise.all(msg.attachments.map(attachment => runnerContainer.sendFile(username, attachment.attachment, attachment.name)));
