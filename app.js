@@ -146,7 +146,7 @@ const runCommand = async (msg, username, command, args = [], disablePrompt = fal
     }
     try {
         if (resultStr !== "") {
-            (disablePrompt ? msg.reply : msg.channel.send)((resultStr.length >= 2000 ? {
+            msg.channel.send((resultStr.length >= 2000 ? {
                 files: [{
                     attachment: Buffer.from(resultStr, 'utf8'),
                     name: 'result.txt'
