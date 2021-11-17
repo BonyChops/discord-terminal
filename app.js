@@ -185,7 +185,8 @@ client.on('messageCreate', async (msg) => {
             let username;
             if (msg.channel.type === "DM") {
                 console.log(allowedGuilds[0].members.cache);
-                if (!allowedGuilds.some(guild => guild.members.cache.find(member => member.id === msg.author.id))) {
+                if (false && !allowedGuilds.some(guild => guild.members.cache.find(member => member.id === msg.author.id))) {
+                    //TODO
                     msg.channel.send("**__Permission Denied__**\nこのbotは認可されたユーザしか使用することはできません\n\n[詳細]:\nあなたが許可されたサーバーのメンバーであることを確認できませんでした．一度，鯖の共用ターミナルを使うか，鯖内で会話をしてみてください．");
                     return;
                 } else {
