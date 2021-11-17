@@ -23,6 +23,8 @@ const scpWrite = (client, option) => (new Promise((resolve, reject) => {
     });
 }));
 
+
+
 const scpRead = (client, src) => (new Promise((resolve, reject) => {
     client.read(src, function (buffer, err) {
         if (err) {
@@ -77,12 +79,13 @@ class Runner {
         }
     }
 
-    sendFile = async(username, sendUrl, fileName) => {
+    sendFile = async (username, sendThing, fileName) => {
         await this.checkUser(username);
-        const sendBuffer = new Buffer.from((await axios.get(sendUrl)).data);
+        const urlRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/;
+        const sendBuffer = new Buffer.from(urlRegex.test(sendThing) ? (await axios.get(sendThing)).data : sendThing);
         const client = new scpClient.Client({
             host: 'localhost',
-            port: 8080,
+            port: this.container.port,
             privateKey: fs.readFileSync('./docker/run/ssh_config/id_rsa'),
             username,
         });
@@ -96,6 +99,17 @@ class Runner {
         });
         console.log(["mv", `${currentDirectory}/${tmpFilename}`, `${currentDirectory}/${fileName}`]);
         await this.sendCommand(username, quote(["mv", `${currentDirectory}/${tmpFilename}`, `${currentDirectory}/${fileName}`]));
+        return `${currentDirectory}/${fileName}`;
+    }
+
+    getFile = async(username, src) => {
+        const client = new scpClient.Client({
+            host: 'localhost',
+            port: this.container.port,
+            privateKey: fs.readFileSync('./docker/run/ssh_config/id_rsa'),
+            username,
+        });
+        return await scpRead(client, src);
     }
 
     sendCommand = async (username, commandInput, args = []) => {
@@ -104,7 +118,7 @@ class Runner {
         await this.container.sendCommand(username, `mkdir -p /home/${username}/.${RUN}`);
         const client = new scpClient.Client({
             host: 'localhost',
-            port: 8080,
+            port: this.container.port,
             privateKey: fs.readFileSync('./docker/run/ssh_config/id_rsa'),
             username,
         });

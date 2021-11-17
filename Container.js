@@ -61,7 +61,7 @@ class Container {
     }
 
     resetContainer = async () => {
-        await exec('ssh-keygen -f "/home/bonychops/.ssh/known_hosts" -R "[localhost]:8080"');
+        await exec(`ssh-keygen -f "/home/bonychops/.ssh/known_hosts" -R "[localhost]:${this.port}"`);
         let containerInfo = (await this.getContainers()).find(containerInfo => containerInfo.Names.includes("/" + this.containerName));
         console.log("loading")
         if (containerInfo !== undefined) {
@@ -76,7 +76,7 @@ class Container {
     sendCommand = async (user, command) => {
         await this.startContainer();
         console.log(`Sending command... ${command}`);
-        const sshCommand = `ssh -oStrictHostKeyChecking=no ${user}@localhost -p 8080 -i ./docker/run/ssh_config/id_rsa ${quote([`zsh -c ${quote([command])}`])}`
+        const sshCommand = `ssh -oStrictHostKeyChecking=no ${user}@localhost -p ${this.port} -i ./docker/run/ssh_config/id_rsa ${quote([`zsh -c ${quote([command])}`])}`
         console.log(sshCommand);
         const out = await exec(sshCommand);
         console.log("got it")
