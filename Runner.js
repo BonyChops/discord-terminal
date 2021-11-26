@@ -102,7 +102,7 @@ class Runner {
         return `${currentDirectory}/${fileName}`;
     }
 
-    getFile = async(username, src) => {
+    getFile = async (username, src) => {
         const client = new scpClient.Client({
             host: 'localhost',
             port: this.container.port,
@@ -113,6 +113,7 @@ class Runner {
     }
 
     sendCommand = async (username, commandInput, args = []) => {
+        if (this.container.authMethod?.user !== undefined) { username = this.container.authMethod?.user; }
         await this.checkUser(username);
         const currentDirectory = this.getCurrentDirectory(username);
         await this.container.sendCommand(username, `mkdir -p /home/${username}/.${RUN}`);
@@ -120,15 +121,16 @@ class Runner {
             host: 'localhost',
             port: this.container.port,
             privateKey: fs.readFileSync('./docker/run/ssh_config/id_rsa'),
+            password: this.container.authMethod?.password,
             username,
         });
         console.log(commandInput);
         await scpWrite(client, {
-            destination: `/home/${username}/.${RUN}/bufCommand.zsh`,
+            destination: `/home/${username}/.${RUN}/bufCommand.sh`,
             content: Buffer.from(commandInput + `\npwd > /home/${username}/.${RUN}/bufCurrent`)
         })
         //const command = [["cd", currentDirectory], ["timeout", TIMEOUT, "sh", `/home/${username}/.${RUN}/bufCommand.sh`]].map(item => quote(item)).join(" ; ");
-        const command = [["cd", currentDirectory], ["timeout", TIMEOUT, "zsh", `/home/${username}/.${RUN}/bufCommand.zsh`, ...args/* , "|", `textimg`, `-o`, `/home/${username}/.${RUN}/bufExport.png` */]].map((item, i) => i === 1 ? quote(item).replaceAll("\\|", "|") : quote(item)).join(" ; ");
+        const command = [["cd", currentDirectory], ["timeout", TIMEOUT, "sh", `/home/${username}/.${RUN}/bufCommand.sh`, ...args/* , "|", `textimg`, `-o`, `/home/${username}/.${RUN}/bufExport.png` */]].map((item, i) => i === 1 ? quote(item).replaceAll("\\|", "|") : quote(item)).join(" ; ");
         const result = await this.container.sendCommand(username, command);
         console.log(result);
         const stdoutPerLine = result.stdout.split("\n");
@@ -137,7 +139,7 @@ class Runner {
         let currentDirectoryIndex = -1;
         console.log(stdoutPerLine.at(-2));
         try {
-            currentDirectoryIndex = db.getIndex("/currentDirectories", username, "username");
+            currentDirectoryIndex =  db.getData("/currentDirectories").findIndex() //db.getIndex("/currentDirectories", username, "username");
         } catch (e) { }
         db.push(`/currentDirectories[${currentDirectoryIndex !== -1 ? currentDirectoryIndex : ""}]`, {
             username,
@@ -152,8 +154,10 @@ class Runner {
 
     showPrompt = async (username, channel) => {
         const currentDirectory = this.getCurrentDirectory(username);
-
-        channel.send(`\`${username}@${config.hostname} | ${currentDirectory} >\``);
+        const containerIdentify = this.container.discordIcon === undefined ? `[${this.container.name}]` : this.container.discordIcon
+        const prompt = `${containerIdentify} \`${this.container.authMethod?.user === undefined ? username : this.container.authMethod?.user}@${config.hostname} | ${currentDirectory} >\``;
+        console.log(prompt)
+        channel.send(prompt);
     }
 }
 

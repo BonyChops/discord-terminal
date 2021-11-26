@@ -98,16 +98,20 @@ ${fs.readFileSync("./eula.txt")}
 const getContainer = (username) => {
     let result;
     try {
-        const userIndex = db.getIndex("/containerCache", username, "username");
-        if (userIndex === -1) {
-            throw new Error("No data found");
-        }
-        result = db.getData(`/containerCache[${userIndex}]/containerName`);
+        result = db.getData(`/containerCache/${username}/containerName`);
     } catch (e) {
         return runnerContainers[0];
     }
     const runnerContainer = runnerContainers.find(runner => runner.container.name === result);
     return runnerContainer === undefined ? runnerContainers[0] : runnerContainer;
+}
+
+const setContainer = (username, containerName) => {
+    if (!runnerContainers.some(runner => runner.container.name === containerName)) {
+        return false
+    }
+    db.push(`/containerCache/${username}/containerName`, containerName);
+    return true;
 }
 
 const runCommand = async (msg, username, command, args = [], disablePrompt = false) => {
@@ -117,7 +121,8 @@ const runCommand = async (msg, username, command, args = [], disablePrompt = fal
         await msg.channel.sendTyping();
         result = await runnerContainer.sendCommand(username, command, args);
     } catch (e) {
-        console.log(e.toString());
+        console.error("SSH ERROR");
+        console.error(e.toString());
         if (e.code === 124) {
             msg.channel.send("```処理がタイムアウトしました```");
             result = e;
@@ -246,6 +251,10 @@ client.on('messageCreate', async (msg) => {
                                     return;
                             }
                             break;
+                        case "os":
+                            const result = setContainer(username, separateCommands[2]);
+                            msg.channel.send(result ? `\`\`\`os:${separateCommands[2]} set\`\`\`` : "```No bootable container found```");
+                            break;
                     }
                 } else {
                     if (msg.attachments.size > 0) {
@@ -349,7 +358,7 @@ client.on('messageCreate', async (msg) => {
             await runCommand(msg, username, workflow.shell, args.slice(1), true);
             const filesResult = await runnerContainer.sendCommand(username, "find /home/workflow/files -maxdepth 1 -type f -size -7M | head -10");
             const filesToDownload = filesResult.stdout.split("\n");
-            if(filesToDownload[0].length <= 0){
+            if (filesToDownload[0].length <= 0) {
                 return;
             }
             console.log(filesToDownload);
@@ -392,6 +401,7 @@ client.on('interactionCreate', async (interaction) => {
     const channel = config.terminalChannel.find(channel => channel.id === String(interaction.channel.id));
     const username = await validUserName(interaction.channel.type === "DM" ? interaction.user.username : channel.user);
     const runnerContainer = getContainer(username);
+    console.log(runnerContainer.container);
     if (interaction.customId === 'eulaAccept') {
         await interaction.update({ content: eula, components: [disabledAcceptRow] });
         const channel = config.terminalChannel.find(channel => channel.id === String(interaction.channel.id));

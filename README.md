@@ -16,7 +16,14 @@ Run linux commands with discord
     "containers": Array<{
         "name": string,
         "port": number,
-        "image": string
+        "image": string,
+        "dockerConfig": Object<dockerConfig>, //The option to create container. See https://docs.docker.com/engine/api/v1.37/#operation/ContainerCreate
+        "discordIcon": string //Example: "<:windows:762682464966803476>"
+        "authMethod": {
+            "type": string,
+            "user": string,
+            "password": string
+        }
     }>
 }
 ```
