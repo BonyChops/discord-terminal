@@ -65,7 +65,7 @@ class Runner {
         let currentDirectory = `/home/${username}`;
         try {
             currentDirectory = db.getData(`/currentDirectories/${username}/${this.container.image}`);
-        } catch (e) { console.error(e)}
+        } catch (e) { console.error(e) }
         return currentDirectory;
     }
 
@@ -101,18 +101,22 @@ class Runner {
     }
 
     getFile = async (username, src) => {
+        console.log(src);
         const client = new scpClient.Client({
             host: 'localhost',
             port: this.container.port,
             privateKey: fs.readFileSync('./docker/run/ssh_config/id_rsa'),
             username,
+            password: this.container.authMethod?.password
         });
         return await scpRead(client, src);
     }
 
     sendCommand = async (username, commandInput, args = []) => {
         const realname = username;
+        console.log("myname is:", username)
         if (this.container.authMethod?.user !== undefined) { username = this.container.authMethod?.user; }
+        console.log(this.container)
         await this.checkUser(username);
         const currentDirectory = this.getCurrentDirectory(realname);
         await this.container.sendCommand(username, `mkdir -p /home/${username}/.${RUN}`);

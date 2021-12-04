@@ -201,6 +201,12 @@ client.on('messageCreate', async (msg) => {
                 username = await validUserName(channel.user);
             }
             const runnerContainer = getContainer(username);
+            const realname = username;
+            console.log(runnerContainer);
+            console.log("real: ", username)
+            if (runnerContainer.container.authMethod?.user !== undefined) {
+                username = runnerContainer.container.authMethod?.user;
+            }
             if (!runnerContainer.eulaChecked(msg.author.id)) {
                 const row = new MessageActionRow()
                     .addComponents(
@@ -251,16 +257,25 @@ client.on('messageCreate', async (msg) => {
                             }
                             break;
                         case "os":
-                            const result = setContainer(username, separateCommands[2]);
+                            const result = setContainer(realname, separateCommands[2]);
                             msg.channel.send(result ? `\`\`\`os:${separateCommands[2]} set\`\`\`` : "```No bootable container found```");
                             break;
+                        case "dl":
+                            const binary = await runnerContainer.getFile(username, /^\/.*/.test(separateCommands[2]) ? separateCommands[2] : runnerContainer.getCurrentDirectory(realname) + "/" + separateCommands[2]);
+                            console.log(binary);
+                            msg.channel.send(({
+                                files: [{
+                                    attachment: binary,
+                                    name: path.parse(separateCommands[2]).base
+                                }]
+                            }));
                     }
                 } else {
                     if (msg.attachments.size > 0) {
                         await Promise.all(msg.attachments.map(attachment => runnerContainer.sendFile(username, attachment.url, attachment.name)));
                         msg.channel.send("```done```");
                     } else {
-                        await runCommand(msg, username, msg.content);
+                        await runCommand(msg, realname, msg.content);
                         /* let result;
                         try {
                             await msg.channel.sendTyping();
