@@ -28,6 +28,8 @@ RUN apt install -y fonts-noto-cjk
 RUN apt install -y cowsay
 RUN apt install -y locales-all
 
+RUN apt install -y traceroute iputils-ping
+
 # RUN echo "$USERNAME   ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 ENV GID=1000
 ENV GROUPNAME=USER

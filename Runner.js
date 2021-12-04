@@ -64,11 +64,8 @@ class Runner {
     getCurrentDirectory = (username) => {
         let currentDirectory = `/home/${username}`;
         try {
-            const currentDirectoryIndex = db.getIndex("/currentDirectories", username, "username");
-            if (currentDirectoryIndex !== -1) {
-                currentDirectory = db.getData(`/currentDirectories[${currentDirectoryIndex}]/currentDirectory`);
-            }
-        } catch (e) { }
+            currentDirectory = db.getData(`/currentDirectories/${username}/${this.container.image}`);
+        } catch (e) { console.error(e)}
         return currentDirectory;
     }
 
@@ -79,7 +76,8 @@ class Runner {
         }
     }
 
-    sendFile = async (username, sendThing, fileName) => {
+    sendFile = async (username, sendThing, fileName, realname = undefined) => {
+        realname ??= username;
         await this.checkUser(username);
         const urlRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/;
         const sendBuffer = new Buffer.from(urlRegex.test(sendThing) ? (await axios.get(sendThing)).data : sendThing);
@@ -90,7 +88,7 @@ class Runner {
             username,
         });
         const tmpFilename = `discord_${new Date().getTime()}`;
-        const currentDirectory = this.getCurrentDirectory(username);
+        const currentDirectory = this.getCurrentDirectory(realname);
         console.log(sendBuffer);
         console.log(typeof sendBuffer);
         await scpWrite(client, {
@@ -113,9 +111,10 @@ class Runner {
     }
 
     sendCommand = async (username, commandInput, args = []) => {
+        const realname = username;
         if (this.container.authMethod?.user !== undefined) { username = this.container.authMethod?.user; }
         await this.checkUser(username);
-        const currentDirectory = this.getCurrentDirectory(username);
+        const currentDirectory = this.getCurrentDirectory(realname);
         await this.container.sendCommand(username, `mkdir -p /home/${username}/.${RUN}`);
         const client = new scpClient.Client({
             host: 'localhost',
@@ -138,13 +137,7 @@ class Runner {
         //const imageBuffer = await scpRead(client, `/home/${username}/.${RUN}/bufExport.png`);
         let currentDirectoryIndex = -1;
         console.log(stdoutPerLine.at(-2));
-        try {
-            currentDirectoryIndex =  db.getData("/currentDirectories").findIndex() //db.getIndex("/currentDirectories", username, "username");
-        } catch (e) { }
-        db.push(`/currentDirectories[${currentDirectoryIndex !== -1 ? currentDirectoryIndex : ""}]`, {
-            username,
-            currentDirectory: currentDirectoryAfter
-        });
+        db.push(`/currentDirectories/${realname}/${this.container.image}`, currentDirectoryAfter);
         return ({
             stdout: stdoutPerLine.slice(0, -1).join("\n"),
             stderr: result.stderr,

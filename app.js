@@ -66,7 +66,6 @@ const runnerContainers = config.containers.map(container => new Runner(container
 
 client.on('ready', async () => {
     console.log(`Logged in as ${client.user.tag}!`);
-    console.log(await validUserName("篠("));
     allowedGuilds = config.terminalChannel.map(channel => channel.id).map(id => client.guilds.cache.find(guild => guild.channels.cache.some(channel => channel.id === id))).filter(guild => guild !== undefined);
     return;
     for (; ;) {
