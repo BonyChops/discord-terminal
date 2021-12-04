@@ -85,6 +85,7 @@ class Runner {
             host: 'localhost',
             port: this.container.port,
             privateKey: fs.readFileSync('./docker/run/ssh_config/id_rsa'),
+            password: this.container.authMethod?.password,
             username,
         });
         const tmpFilename = `discord_${new Date().getTime()}`;
