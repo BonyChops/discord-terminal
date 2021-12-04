@@ -1,5 +1,5 @@
 const RUN = "discord-terminal-run";
-const TIMEOUT = 3;
+const TIMEOUT = 15;
 
 const { Client, Intents, MessageAttachment, MessageActionRow, MessageButton } = require('discord.js');
 const client = new Client({

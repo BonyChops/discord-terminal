@@ -1,7 +1,7 @@
 const { Container } = require("./Container");
 
 const RUN = "discord-terminal-run";
-const TIMEOUT = 3;
+const TIMEOUT = 15;
 const util = require('util');
 const childProcess = require('child_process');
 const quote = require('shell-quote').quote;
